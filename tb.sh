@@ -21,8 +21,8 @@ fi
 
 CMD=$1
 
-TC_CONTAINER_NAME=${MYUNAME}-centos-builder
-TC_CONTAINER_TAG=local/${MYUNAME}-stx-builder:7.8
+TC_CONTAINER_NAME=${MYUNAME}-debian-builder
+TC_CONTAINER_TAG=local/${MYUNAME}-stx-builder:10.7
 TC_DOCKERFILE=Dockerfile
 
 function create_container {
@@ -32,7 +32,7 @@ function create_container {
         EXTRA_ARGS="--build-arg MY_EMAIL=${MY_EMAIL}"
     fi
 
-    docker build \
+    sudo docker build \
         --build-arg MYUID=$(id -u) \
         --build-arg MYUNAME=${USER} \
         ${EXTRA_ARGS} \
@@ -45,9 +45,9 @@ function create_container {
 
 function exec_container {
     echo "docker cp ${WORK_DIR}/buildrc ${TC_CONTAINER_NAME}:/home/${MYUNAME}"
-    docker cp ${WORK_DIR}/buildrc ${TC_CONTAINER_NAME}:/home/${MYUNAME}
-    docker cp ${WORK_DIR}/localrc ${TC_CONTAINER_NAME}:/home/${MYUNAME}
-    docker exec -it --user=${MYUNAME} -e MYUNAME=${MYUNAME} ${TC_CONTAINER_NAME} script -q -c "/bin/bash" /dev/null
+    sudo docker cp ${WORK_DIR}/buildrc ${TC_CONTAINER_NAME}:/home/${MYUNAME}
+    sudo docker cp ${WORK_DIR}/localrc ${TC_CONTAINER_NAME}:/home/${MYUNAME}
+    sudo docker exec -it --user=${MYUNAME} -e MYUNAME=${MYUNAME} ${TC_CONTAINER_NAME} script -q -c "/bin/bash" /dev/null
 }
 
 function run_container {
@@ -56,7 +56,7 @@ function run_container {
     #create centOS mirror
     mkdir -p ${HOST_MIRROR_DIR}/CentOS
 
-    docker run -it --rm \
+    sudo docker run -it --rm \
         --name ${TC_CONTAINER_NAME} \
         --detach \
         -v /var/run/docker.sock:/var/run/docker.sock \
@@ -74,16 +74,16 @@ function run_container {
 }
 
 function stop_container {
-    docker stop ${TC_CONTAINER_NAME}
+    sudo docker stop ${TC_CONTAINER_NAME}
 }
 
 function kill_container {
-    docker kill ${TC_CONTAINER_NAME}
+    sudo docker kill ${TC_CONTAINER_NAME}
 }
 
 function clean_container {
-    docker rm ${TC_CONTAINER_NAME} || true
-    docker image rm ${TC_CONTAINER_TAG}
+    sudo docker rm ${TC_CONTAINER_NAME} || true
+    sudo docker image rm ${TC_CONTAINER_TAG}
 }
 
 function usage {

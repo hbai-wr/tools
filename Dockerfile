@@ -31,27 +31,9 @@ ARG MYUNAME=builder
 ARG MYUID=1000
 # CentOS & EPEL URLs that match the base image
 # Override these with --build-arg if you have a mirror
-ARG CENTOS_7_8_URL=https://vault.centos.org/centos/7.8.2003
-ARG EPEL_7_8_URL=https://archives.fedoraproject.org/pub/archive/epel/7.2020-04-20
 ARG MY_EMAIL=
 
 ENV container=docker
-
-# Lock down centos & epel repos
-RUN rm -f /etc/yum.repos.d/*
-COPY toCOPY/yum.repos.d/*.repo /etc/yum.repos.d/
-COPY centos-mirror-tools/rpm-gpg-keys/RPM-GPG-KEY-EPEL-7 /etc/pki/rpm-gpg/
-RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY* && \
-    echo "http_caching=packages" >> /etc/yum.conf && \
-    # yum variables must be in lower case ; \
-    echo "$CENTOS_7_8_URL" >/etc/yum/vars/centos_7_8_url && \
-    echo "$EPEL_7_8_URL" >/etc/yum/vars/epel_7_8_url && \
-    # disable fastestmirror plugin because we are not using mirrors ; \
-    # FIXME: use a mirrorlist URL for centos/vault/epel archives. I couldn't find one.
-    sed -i 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf && \
-    yum clean all && \
-    yum makecache && \
-    yum install -y deltarpm
 
 # Without this, init won't start the enabled services and exec'ing and starting
 # them reports "Failed to get D-Bus connection: Operation not permitted".
@@ -59,23 +41,17 @@ VOLUME /run /tmp
 
 # Download required dependencies by mirror/build processes.
 RUN groupadd -g 751 cgts && \
-    echo "mock:x:751:root" >> /etc/group && \
-    echo "mockbuild:x:9001:" >> /etc/group && \
-    yum install -y anaconda \
-        anaconda-runtime \
+    apt-get update && apt-get install -y \
+        sudo \
         autoconf-archive \
         autogen \
         automake \
+        autoconf \
+        libtool \
+        make \
         bc \
-        bind \
-        bind-utils \
         bison \
-        cpanminus \
         createrepo \
-        createrepo_c \
-        deltarpm \
-        docker-client \
-        expat-devel \
         flex \
         isomd5sum \
         gcc \
@@ -84,43 +60,14 @@ RUN groupadd -g 751 cgts && \
         libguestfs-tools \
         libtool \
         libxml2 \
-        lighttpd \
-        lighttpd-fastcgi \
-        lighttpd-mod_geoip \
         net-tools \
-        mkisofs \
-        http://mirror.starlingx.cengn.ca/mirror/centos/epel/dl.fedoraproject.org/pub/epel/7/x86_64/Packages/m/mock-1.4.16-1.el7.noarch.rpm \
-        http://mirror.starlingx.cengn.ca/mirror/centos/epel/dl.fedoraproject.org/pub/epel/7/x86_64/Packages/m/mock-core-configs-31.6-1.el7.noarch.rpm \
-        mongodb \
-        mongodb-server \
-        pax \
-        perl-CPAN \
-        python-deltarpm \
-        python-pep8 \
-        python-pip \
-        python-psutil \
-        python2-psutil \
-        python36-psutil \
-        python3-devel \
-        python-sphinx \
-        python-subunit \
-        python-testrepository \
-        python-tox \
-        python-yaml \
-        python2-ruamel-yaml \
-        postgresql \
-        qemu-kvm \
-        quilt \
-        rpm-build \
-        rpm-sign \
-        rpm-python \
         squashfs-tools \
         sudo \
         systemd \
         syslinux \
         udisks2 \
-        vim-enhanced \
-        wget
+        wget \
+        live-build
 
 # This image requires a set of scripts and helpers
 # for working correctly, in this section they are
@@ -138,47 +85,28 @@ COPY toCOPY/builder-constraints.txt /home/$MYUNAME/
 COPY toCOPY/generate-cgcs-tis-repo /usr/local/bin
 COPY toCOPY/generate-cgcs-centos-repo.sh /usr/local/bin
 
-# cpan modules, installing with cpanminus to avoid stupid questions since cpan is whack
-RUN cpanm --notest Fatal && \
-    cpanm --notest XML::SAX  && \
-    cpanm --notest XML::SAX::Expat && \
-    cpanm --notest XML::Parser && \
-    cpanm --notest XML::Simple
-
 # pip installs
-RUN pip install -c /home/$MYUNAME/builder-constraints.txt python-subunit junitxml --upgrade && \
-    pip install -c /home/$MYUNAME/builder-constraints.txt tox --upgrade
-
-# Install repo tool
-RUN curl https://storage.googleapis.com/git-repo-downloads/repo > /usr/local/bin/repo && \
-    chmod a+x /usr/local/bin/repo
+#RUN pip3 install -c /home/$MYUNAME/builder-constraints.txt python-subunit junitxml --upgrade && \
+#    pip3 install -c /home/$MYUNAME/builder-constraints.txt tox --upgrade
 
 # installing go and setting paths
 ENV GOPATH="/usr/local/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
-RUN yum install -y golang && \
+RUN apt-get install -y golang && \
     mkdir -p ${GOPATH}/bin && \
     curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
 # mock time
 # forcing chroots since a couple of packages naughtily insist on network access and
 # we dont have nspawn and networks happy together.
-RUN useradd -s /sbin/nologin -u 9001 -g 9001 mockbuild && \
-    rmdir /var/lib/mock && \
-    ln -s /localdisk/loadbuild/mock /var/lib/mock && \
-    rmdir /var/cache/mock && \
-    ln -s /localdisk/loadbuild/mock-cache /var/cache/mock && \
-    echo "config_opts['use_nspawn'] = False" >> /etc/mock/site-defaults.cfg && \
-    echo "config_opts['rpmbuild_networking'] = True" >> /etc/mock/site-defaults.cfg && \
-    echo  >> /etc/mock/site-defaults.cfg
-
-# Inherited  tools for mock stuff
-# we at least need the mock_cache_unlock tool
-# they install into /usr/bin
-COPY toCOPY/mock_overlay /opt/mock_overlay
-RUN cd /opt/mock_overlay && \
-    make && \
-    make install
+#RUN useradd -s /sbin/nologin -u 9001 -g 9001 mockbuild && \
+#    rmdir /var/lib/mock && \
+#    ln -s /localdisk/loadbuild/mock /var/lib/mock && \
+#    rmdir /var/cache/mock && \
+#    ln -s /localdisk/loadbuild/mock-cache /var/cache/mock && \
+#    echo "config_opts['use_nspawn'] = False" >> /etc/mock/site-defaults.cfg && \
+#    echo "config_opts['rpmbuild_networking'] = True" >> /etc/mock/site-defaults.cfg && \
+#    echo  >> /etc/mock/site-defaults.cfg
 
 #  ENV setup
 RUN echo "# Load stx-builder configuration" >> /etc/profile.d/stx-builder-conf.sh && \
@@ -191,7 +119,7 @@ RUN echo "# Load stx-builder configuration" >> /etc/profile.d/stx-builder-conf.s
     echo "export PATH=\$MY_REPO/build-tools:\$PATH" >> /etc/profile.d/stx-builder-conf.sh
 
 # centos locales are broken. this needs to be run after the last yum install/update
-RUN localedef -i en_US -f UTF-8 en_US.UTF-8
+#RUN localedef -i en_US -f UTF-8 en_US.UTF-8
 
 # setup
 RUN mkdir -p /www/run && \
@@ -204,47 +132,6 @@ RUN mkdir -p /www/run && \
     ln -s /import/mirrors/fedora /www/root/htdocs/fedora && \
     ln -s /localdisk/designer /www/root/htdocs/localdisk/designer
 
-# lighthttpd setup
-# chmod for /var/log/lighttpd fixes a centos issue
-# in place sed for server root since it's expanded soon thereafter
-#     echo "server.bind = \"localhost\"" >> /etc/lighttpd/lighttpd.conf && \
-RUN echo "$MYUNAME ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers && \
-    mkdir -p  /var/log/lighttpd  && \
-    chmod a+rwx /var/log/lighttpd/ && \
-    sed -i 's%^var\.log_root.*$%var.log_root = "/www/logs"%g' /etc/lighttpd/lighttpd.conf  && \
-    sed -i 's%^var\.server_root.*$%var.server_root = "/www/root"%g' /etc/lighttpd/lighttpd.conf  && \
-    sed -i 's%^var\.home_dir.*$%var.home_dir = "/www/home"%g' /etc/lighttpd/lighttpd.conf  && \
-    sed -i 's%^var\.state_dir.*$%var.state_dir = "/www/run"%g' /etc/lighttpd/lighttpd.conf  && \
-    sed -i "s/server.port/#server.port/g" /etc/lighttpd/lighttpd.conf  && \
-    sed -i "s/server.use-ipv6/#server.use-ipv6/g" /etc/lighttpd/lighttpd.conf && \
-    sed -i "s/server.username/#server.username/g" /etc/lighttpd/lighttpd.conf && \
-    sed -i "s/server.groupname/#server.groupname/g" /etc/lighttpd/lighttpd.conf && \
-    sed -i "s/server.bind/#server.bind/g" /etc/lighttpd/lighttpd.conf && \
-    sed -i "s/server.document-root/#server.document-root/g" /etc/lighttpd/lighttpd.conf && \
-    sed -i "s/server.dirlisting/#server.dirlisting/g" /etc/lighttpd/lighttpd.conf && \
-    echo "server.port = 8088" >> /etc/lighttpd/lighttpd.conf && \
-    echo "server.use-ipv6 = \"disable\"" >> /etc/lighttpd/lighttpd.conf && \
-    echo "server.username = \"$MYUNAME\"" >> /etc/lighttpd/lighttpd.conf && \
-    echo "server.groupname = \"cgts\"" >> /etc/lighttpd/lighttpd.conf && \
-    echo "server.bind = \"localhost\"" >> /etc/lighttpd/lighttpd.conf && \
-    echo "server.document-root   = \"/www/root/htdocs\"" >> /etc/lighttpd/lighttpd.conf && \
-    sed -i "s/dir-listing.activate/#dir-listing.activate/g" /etc/lighttpd/conf.d/dirlisting.conf && \
-    echo "dir-listing.activate = \"enable\"" >> /etc/lighttpd/conf.d/dirlisting.conf
-
-# Uprev git, git-review, repo
-RUN yum install -y dh-autoreconf curl-devel expat-devel gettext-devel  openssl-devel perl-devel zlib-devel asciidoc xmlto docbook2X && \
-    cd /tmp && \
-    wget https://github.com/git/git/archive/v2.29.2.tar.gz -O git-2.29.2.tar.gz && \
-    tar xzvf git-2.29.2.tar.gz && \
-    cd git-2.29.2 && \
-    make configure && \
-    ./configure --prefix=/usr/local && \
-    make all doc && \
-    make install install-doc && \
-    cd /tmp && \
-    rm -rf git-2.29.2.tar.gz git-2.29.2 && \
-    pip install git-review --upgrade
-
 # Systemd Enablement
 RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i; done); \
     rm -f /lib/systemd/system/multi-user.target.wants/*;\
@@ -256,8 +143,7 @@ RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == system
     rm -f /lib/systemd/system/anaconda.target.wants/*
 
 RUN useradd -r -u $MYUID -g cgts -m $MYUNAME && \
-    ln -s /home/$MYUNAME/.ssh /mySSH && \
-    rsync -av /etc/skel/ /home/$MYUNAME/
+    ln -s /home/$MYUNAME/.ssh /mySSH
 
 # now that we are doing systemd, make the startup script be in bashrc
 # also we need to SHADOW the udev centric mkefiboot script with a sudo centric one
@@ -273,20 +159,7 @@ RUN chown $MYUNAME /home/$MYUNAME && \
     runuser -u $MYUNAME -- git config --global user.name $MYUNAME && \
     runuser -u $MYUNAME -- git config --global color.ui false
 
-# Customizations for mirror creation
-RUN rm /etc/yum.repos.d/*
-COPY centos-mirror-tools/yum.repos.d/* /etc/yum.repos.d/
-COPY centos-mirror-tools/rpm-gpg-keys/* /etc/pki/rpm-gpg/
-
-# Import GPG keys
-RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY*
-
-# Try to continue a yum command even if a StarlingX repo is unavailable.
-RUN yum-config-manager --setopt=StarlingX\*.skip_if_unavailable=1 --save
-
+RUN echo "$MYUNAME ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers
 # When we run 'init' below, it will run systemd, and systemd requires RTMIN+3
 # to exit cleanly. By default, docker stop uses SIGTERM, which systemd ignores.
 STOPSIGNAL RTMIN+3
-
-# Don't know if it's possible to run services without starting this
-CMD /usr/sbin/init
