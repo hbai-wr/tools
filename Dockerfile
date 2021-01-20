@@ -13,7 +13,7 @@
 # Copyright (C) 2019 Intel Corporation
 #
 
-FROM centos:7.8.2003
+FROM debian:buster
 
 # Proxy configuration
 #ENV http_proxy  "http://your.actual_http_proxy.com:your_port"
