@@ -67,12 +67,14 @@ RUN groupadd -g 751 cgts && \
         syslinux \
         udisks2 \
         wget \
+        vim \
         live-build
 
 # This image requires a set of scripts and helpers
 # for working correctly, in this section they are
 # copied inside the image.
 COPY toCOPY/finishSetup.sh /usr/local/bin
+COPY toCOPY/repo /usr/local/bin
 COPY toCOPY/populate_downloads.sh /usr/local/bin
 COPY toCOPY/generate-local-repo.sh /usr/local/bin
 COPY toCOPY/generate-centos-repo.sh /usr/local/bin
