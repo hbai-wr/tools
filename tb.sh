@@ -11,7 +11,6 @@
 # tb.sh expects to find its configuration file buildrc in the current
 # directory, like Vagrant looks for Vagrantfile.
 
-
 SCRIPT_DIR=$(cd $(dirname "$0") && pwd)
 WORK_DIR=$(pwd)
 
