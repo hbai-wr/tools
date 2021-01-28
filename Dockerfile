@@ -13,7 +13,7 @@
 # Copyright (C) 2019 Intel Corporation
 #
 
-FROM debian:buster
+FROM debian:bullseye
 
 # Proxy configuration
 #ENV http_proxy  "http://your.actual_http_proxy.com:your_port"
@@ -51,7 +51,6 @@ RUN groupadd -g 751 cgts && \
         make \
         bc \
         bison \
-        createrepo \
         flex \
         isomd5sum \
         gcc \
@@ -68,7 +67,10 @@ RUN groupadd -g 751 cgts && \
         udisks2 \
         wget \
         vim \
-        live-build
+        live-build \
+        pbuilder \
+        debootstrap \
+        devscripts
 
 # This image requires a set of scripts and helpers
 # for working correctly, in this section they are
@@ -82,33 +84,18 @@ COPY toCOPY/lst_utils.sh /usr/local/bin
 COPY toCOPY/.inputrc /home/$MYUNAME/
 COPY toCOPY/builder-constraints.txt /home/$MYUNAME/
 
+# For pbuilder setting
+RUN mkdir -p /home/${MYUNAME}/pbuilder
+COPY toCOPY/pbuilder/* /home/${MYUNAME}/pbuilder/
+
+# For live-build setting
+RUN mkdir -p /home/${MYUNAME}/live-build
+COPY toCOPY/live-build/* /home/${MYUNAME}/live-build/
+
 # Thes are included for backward compatibility, and
 # should be removed after a reasonable time.
 COPY toCOPY/generate-cgcs-tis-repo /usr/local/bin
 COPY toCOPY/generate-cgcs-centos-repo.sh /usr/local/bin
-
-# pip installs
-#RUN pip3 install -c /home/$MYUNAME/builder-constraints.txt python-subunit junitxml --upgrade && \
-#    pip3 install -c /home/$MYUNAME/builder-constraints.txt tox --upgrade
-
-# installing go and setting paths
-ENV GOPATH="/usr/local/go"
-ENV PATH="${GOPATH}/bin:${PATH}"
-RUN apt-get install -y golang && \
-    mkdir -p ${GOPATH}/bin && \
-    curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-
-# mock time
-# forcing chroots since a couple of packages naughtily insist on network access and
-# we dont have nspawn and networks happy together.
-#RUN useradd -s /sbin/nologin -u 9001 -g 9001 mockbuild && \
-#    rmdir /var/lib/mock && \
-#    ln -s /localdisk/loadbuild/mock /var/lib/mock && \
-#    rmdir /var/cache/mock && \
-#    ln -s /localdisk/loadbuild/mock-cache /var/cache/mock && \
-#    echo "config_opts['use_nspawn'] = False" >> /etc/mock/site-defaults.cfg && \
-#    echo "config_opts['rpmbuild_networking'] = True" >> /etc/mock/site-defaults.cfg && \
-#    echo  >> /etc/mock/site-defaults.cfg
 
 #  ENV setup
 RUN echo "# Load stx-builder configuration" >> /etc/profile.d/stx-builder-conf.sh && \
@@ -120,29 +107,15 @@ RUN echo "# Load stx-builder configuration" >> /etc/profile.d/stx-builder-conf.s
     echo "export FORMAL_BUILD=0" >> /etc/profile.d/stx-builder-conf.sh && \
     echo "export PATH=\$MY_REPO/build-tools:\$PATH" >> /etc/profile.d/stx-builder-conf.sh
 
-# centos locales are broken. this needs to be run after the last yum install/update
-#RUN localedef -i en_US -f UTF-8 en_US.UTF-8
-
-# setup
-RUN mkdir -p /www/run && \
-    mkdir -p /www/logs && \
-    mkdir -p /www/home && \
-    mkdir -p /www/root/htdocs/localdisk && \
-    chown -R $MYUID:cgts /www && \
-    ln -s /localdisk/loadbuild /www/root/htdocs/localdisk/loadbuild && \
-    ln -s /import/mirrors/CentOS /www/root/htdocs/CentOS && \
-    ln -s /import/mirrors/fedora /www/root/htdocs/fedora && \
-    ln -s /localdisk/designer /www/root/htdocs/localdisk/designer
-
 # Systemd Enablement
-RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i; done); \
-    rm -f /lib/systemd/system/multi-user.target.wants/*;\
-    rm -f /etc/systemd/system/*.wants/*;\
-    rm -f /lib/systemd/system/local-fs.target.wants/*; \
-    rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
-    rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
-    rm -f /lib/systemd/system/basic.target.wants/*;\
-    rm -f /lib/systemd/system/anaconda.target.wants/*
+#RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+#    rm -f /lib/systemd/system/multi-user.target.wants/*;\
+#    rm -f /etc/systemd/system/*.wants/*;\
+#    rm -f /lib/systemd/system/local-fs.target.wants/*; \
+#    rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+#    rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+#    rm -f /lib/systemd/system/basic.target.wants/*;\
+#    rm -f /lib/systemd/system/anaconda.target.wants/*
 
 RUN useradd -r -u $MYUID -g cgts -m $MYUNAME && \
     ln -s /home/$MYUNAME/.ssh /mySSH
@@ -162,6 +135,7 @@ RUN chown $MYUNAME /home/$MYUNAME && \
     runuser -u $MYUNAME -- git config --global color.ui false
 
 RUN echo "$MYUNAME ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers
+
 # When we run 'init' below, it will run systemd, and systemd requires RTMIN+3
 # to exit cleanly. By default, docker stop uses SIGTERM, which systemd ignores.
 STOPSIGNAL RTMIN+3

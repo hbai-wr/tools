@@ -5,33 +5,6 @@ if [[ -r ${HOME}/buildrc ]]; then
     source ${HOME}/buildrc
 fi
 
-# start the web server
-# this was done before I reallized I needed to have systemd
-# running in the container. could revert to systemd startup but
-# will leave that task for later
-
-if [[ ! `ps augxww | grep lighttpd | grep conf` ]]; then
-    echo "starting lighttpd up...";
-    sudo /usr/sbin/lighttpd  -f /etc/lighttpd/lighttpd.conf
-else
-    echo "not starting up lighttpd, it's already running"
-fi
-
-
-# make sure the mock directories are there
-# and have the right settings
-mkdir -p /localdisk/loadbuild/mock
-sudo chmod 775 /localdisk/loadbuild/mock
-sudo chown root:mock /localdisk/loadbuild/mock
-mkdir -p /localdisk/loadbuild/mock-cache
-sudo chmod 775 /localdisk/loadbuild/mock-cache
-sudo chown root:mock /localdisk/loadbuild/mock-cache
-### may need to add these later. once it works will try on clean localdisk setup
-# [builder@bavery-WS-DESK root]$ history | grep mkdir
-# 55  mkdir -p $MY_WORKSPACE/results
-# 66  mkdir -p $MY_WORKSPACE/std/results/$MY_BUILD_ENVIRONMENT-std
-# 78  mkdir -p $MY_WORKSPACE/rt/rpmbuild/RPMS
-
 # make the place we will clone into
 . /etc/profile.d/stx-builder-conf.sh
 echo "MY_REPO=$MY_REPO"
@@ -53,3 +26,9 @@ To build all packages:
 To make an iso:
     build-iso
 EOF
+
+# pbuilder setup
+source ${HOME}/pbuilder/pbuilder_setup.sh
+
+# live-build setup
+#. ${HOME}/live-build/live-build_setup.sh

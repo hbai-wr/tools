@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -e
+
+if [ -e /var/stx-repo.rsa ]
+then
+	apt-key add /var/stx-repo.rsa
+fi

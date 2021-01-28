@@ -21,8 +21,8 @@ fi
 
 CMD=$1
 
-TC_CONTAINER_NAME=${MYUNAME}-debian-builder
-TC_CONTAINER_TAG=local/${MYUNAME}-stx-builder:10.7
+TC_CONTAINER_NAME=${MYUNAME}-debian-bullseye1
+TC_CONTAINER_TAG=local/${MYUNAME}-stx-bullseye:10.7
 TC_DOCKERFILE=Dockerfile
 
 function create_container {
@@ -47,7 +47,7 @@ function exec_container {
     echo "docker cp ${WORK_DIR}/buildrc ${TC_CONTAINER_NAME}:/home/${MYUNAME}"
     sudo docker cp ${WORK_DIR}/buildrc ${TC_CONTAINER_NAME}:/home/${MYUNAME}
     sudo docker cp ${WORK_DIR}/localrc ${TC_CONTAINER_NAME}:/home/${MYUNAME}
-    sudo docker exec -it --user=${MYUNAME} -e MYUNAME=${MYUNAME} ${TC_CONTAINER_NAME} script -q -c "/bin/bash" /dev/null
+    sudo docker exec -it --user=${MYUNAME} --workdir /localdisk/loadbuild/ -e MYUNAME=${MYUNAME} ${TC_CONTAINER_NAME} script -q -c "/bin/bash" /dev/null
 }
 
 function run_container {

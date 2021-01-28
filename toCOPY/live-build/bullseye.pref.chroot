@@ -1,0 +1,3 @@
+Package: dnsmasq
+Pin: release n=bullseye
+Pin-Priority: 600
