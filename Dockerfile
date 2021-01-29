@@ -39,6 +39,7 @@ ENV container=docker
 # them reports "Failed to get D-Bus connection: Operation not permitted".
 VOLUME /run /tmp
 
+RUN echo "deb-src http://deb.debian.org/debian bullseye main" >> /etc/apt/sources.list
 # Download required dependencies by mirror/build processes.
 RUN groupadd -g 751 cgts && \
     apt-get update && apt-get install -y \
