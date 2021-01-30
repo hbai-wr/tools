@@ -7,27 +7,19 @@ set -e
 #so below may should not pass to pbuilder command
 DISTRIBUTION="bullseye"
 ARCHITECTURE="amd64"
-BASEDIRECTORY="/localdisk/loadbuild/builder/pbuilder"
-TGZBASEFILE="${BASEDIRECTORY}/pbuilder/${DISTRIBUTION}-${ARCHITECTURE}-base.tgz"
+COWBASEFILE="${BASEDIRECTORY}/pbuilder/base.cow"
 MIRROR=ftp.debian.org
-HOOKDIR=${BASEDIRECTORY}/pbuilder/hooks
-AVOIDLIST="${BASEDIRECTORY}/AVOID.LST"
-ROOTCOMMAND=sudo
+ROOTCMD=sudo
+BASEDIRECTORY="/localdisk/loadbuild/build-root/builder/"
 
+AVOIDLIST="${BASEDIRECTORY}/AVOID.LST"
 NOBUILDDEP=${BASEDIRECTORY}/FAILED/NOBUILDDEP
 FAILED=${BASEDIRECTORY}/FAILED
 DEPWAIT=${BASEDIRECTORY}/DEPWAIT
 SUCCESS=${BASEDIRECTORY}/SUCCESS
 
-mkdir -p "$FAILED" || true
-mkdir -p "$DEPWAIT" || true
-mkdir -p "$SUCCESS" || true
-mkdir -p ${BASEDIRECTORY}/WORKING || true 
-mkdir -p ${BASEDIRECTORY}/STATUS || true 
+mkdir -p ${BASEDIRECTORY}/{FAILED,DEPWAIT,SUCCESS,WORKING,STATUS}
 mkdir -p "$NOBUILDDEP" || true
-BUILDRESULTDIR=${BASEDIRECTORY}/result
-mkdir -p "$BUILDRESULTDIR" || true
-mkdir -p "${APTCACHE}" || true
 
 STATUSFILE=${BASEDIRECTORY}/STATUS/$(hostname)-$$
 BUILDTMP=${BASEDIRECTORY}/tmp-b-$(hostname)-$$
@@ -35,7 +27,7 @@ BUILDTMP=${BASEDIRECTORY}/tmp-b-$(hostname)-$$
 function usage () {
     echo
     echo "Usage:"
-    echo "$0 [Options] --pbuilder-init"
+    echo "$0 [Options] --init"
     echo
 }
 
@@ -52,9 +44,10 @@ function buildone() {
     mkdir $BUILDTMP || true
     (
 	cd $BUILDTMP
+	#Source from: deb_path? {a.source deb b.git url c.tar from download}
 	# make sure that the deb-src has been enabled in build container
 	apt-get source -d $PROGNAME
-	if sudo pbuilder build --hookdir "${HOOKDIR}" --logfile "$LOGFILE" *.dsc; then
+	if ${ROOTCMD} cowbuilder --build --logfile "$LOGFILE" *.dsc; then
 	    mv "$LOGFILE" "$SUCCESS"
 	    echo Build successful
 	else
@@ -80,15 +73,14 @@ function buildone() {
     rm -rf $BUILDTMP;
 }
 
-#$ROOTCOMMAND dselect update
-#$ROOTCOMMAND pbuilder update 
+#$ROOTCMD dselect update
+#$ROOTCMD pbuilder update 
 
-#$USERPKGLSIT="./pkg.lst"
-if [ ! -f "./.tgzlock" ]; then
-    echo "Try to clean the old tgz file if exists!"
-    [ -f ${TGZBASEFILE} ] && sudo rm ${TGZBASEFILE}
-    sudo pbuilder --create --distribution ${DISTRIBUTION} --architecture ${ARCHITECTURE} --basetgz ${TGZBASEFILE}
-    [ $? == 0 ] && touch ./.tgzlock;
+if [ ! -f "./.cowlock" ]; then
+    echo "Try to clean the old base.cow."
+    [ -f ${COWBASEFILE} ] && sudo rm ${COWBASEFILE}
+    ${ROOTCMD} pbuilder --create
+    [ $? == 0 ] && touch ./.cowlock;
 fi
 
 for A in dnsmasq; do
@@ -108,11 +100,5 @@ for A in dnsmasq; do
 	continue
     fi
     # end of atomic.
-
-    #build_package_prepard $A
-
-    #waitingroutine
     buildone $A
-
-    #update_inject_apt $A
 done

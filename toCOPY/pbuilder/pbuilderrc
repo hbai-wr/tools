@@ -1,8 +1,11 @@
 DISTRIBUTION=bullseye
+
 ARCHITECTURE=amd64
 
+HOOKDIR="/localdisk/loadbuild/pbuilder/hooks"
+
 # Path to your local repo to be used as a mirror written as apt source line.
-OTHERMIRROR="deb [trusted=yes] file:///localdisk/loadbuild/pbuilder/result ./"
+OTHERMIRROR="deb [trusted=yes] file:///localdisk/loadbuild/pbuilder/result/deps ./"
 
 # Path to your local repo. This tells pbuilder to mount this directory so it is available in the chroot.
 BINDMOUNTS="/localdisk/loadbuild/pbuilder/result"

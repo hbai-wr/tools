@@ -6,9 +6,9 @@ echo "Pbuilder Environment Preparing..."
     source ${HOME}/buildrc
 }
 # pbuilder env initialize
-MY_BUILDROOT="${MY_WORKSPACE}/build-root"
+MY_BUILDROOT="${MY_WORKSPACE}/build-root/builder"
 [ ! -d ${MY_BUILDROOT} ] && {
-    mkdir ${MY_BUILDROOT}
+    mkdir -p ${MY_BUILDROOT}
 }
 mkdir ${MY_BUILDROOT}/pbuilder >> /dev/null 2>&1
 mkdir ${MY_BUILDROOT}/pbuilder/hooks >> /dev/null 2>&1

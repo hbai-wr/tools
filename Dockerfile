@@ -71,7 +71,8 @@ RUN groupadd -g 751 cgts && \
         live-build \
         pbuilder \
         debootstrap \
-        devscripts
+        devscripts \
+	cowbuilder
 
 # This image requires a set of scripts and helpers
 # for working correctly, in this section they are

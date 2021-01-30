@@ -7,7 +7,7 @@ echo "Live-build Environment Preparing..."
 }
 
 # pbuilder env initialize
-MY_LBROOT="${MY_WORKSPACE}/build-root/lbiso"
+MY_LBROOT="${MY_WORKSPACE}/build-root/live-build-iso"
 [ ! -d ${MY_LBROOT} ] && {
     sudo mkdir -p ${MY_LBROOT}
 }
