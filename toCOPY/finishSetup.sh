@@ -28,7 +28,7 @@ To make an iso:
 EOF
 
 # pbuilder setup
-source ${HOME}/pbuilder/pbuilder_setup.sh
+#source ${HOME}/pbuilder/pbuilder_setup.sh
 
 # live-build setup
 #. ${HOME}/live-build/live-build_setup.sh

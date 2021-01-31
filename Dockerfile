@@ -86,6 +86,8 @@ COPY toCOPY/lst_utils.sh /usr/local/bin
 COPY toCOPY/.inputrc /home/$MYUNAME/
 COPY toCOPY/builder-constraints.txt /home/$MYUNAME/
 
+RUN mkdir -p /localdisk/loadbuild/builder
+RUN sudo chmod 775 /localdisk/loadbuild/builder
 # For pbuilder setting
 RUN mkdir -p /home/${MYUNAME}/pbuilder
 COPY toCOPY/pbuilder/* /home/${MYUNAME}/pbuilder/

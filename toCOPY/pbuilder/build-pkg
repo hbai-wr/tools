@@ -4,13 +4,16 @@
 set -e
 
 #we covered /etc/pbuilderrc and try to use the default config
-#so below may should not pass to pbuilder command
+#so below may should not pass to cowbuilder command
 DISTRIBUTION="bullseye"
 ARCHITECTURE="amd64"
+[ -z ${MY_WORKSPACE} ] && {
+    source ${HOME}/buildrc
+}
+BASEDIRECTORY="${MY_WORKSPACE}/build-root/builder/"
 COWBASEFILE="${BASEDIRECTORY}/pbuilder/base.cow"
 MIRROR=ftp.debian.org
 ROOTCMD=sudo
-BASEDIRECTORY="/localdisk/loadbuild/build-root/builder/"
 
 AVOIDLIST="${BASEDIRECTORY}/AVOID.LST"
 NOBUILDDEP=${BASEDIRECTORY}/FAILED/NOBUILDDEP
@@ -79,7 +82,7 @@ function buildone() {
 if [ ! -f "./.cowlock" ]; then
     echo "Try to clean the old base.cow."
     [ -f ${COWBASEFILE} ] && sudo rm ${COWBASEFILE}
-    ${ROOTCMD} pbuilder --create
+    ${ROOTCMD} cowbuilder --create
     [ $? == 0 ] && touch ./.cowlock;
 fi
 
