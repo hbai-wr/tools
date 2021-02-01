@@ -1,3 +1,24 @@
+##############################################################
+For debian/10 branch:
+
+Clone this project and then:
+bash tb.sh create
+bash tb.sh run
+bash tb.sh exec
+
+You will get a debian bullseye build container:
+
+Make sure env variable "MY_WORKSPACE" exists, otherwise:
+source <home>/buildrc
+
+cd $MY_WORKSPACE
+cd builder
+<HOME>/pbuilder_setup.sh
+
+Then you get a configured pbuilder development env.
+##############################################################
+
+
 =====
 tools
 =====
