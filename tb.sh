@@ -13,6 +13,8 @@
 
 SCRIPT_DIR=$(cd $(dirname "$0") && pwd)
 WORK_DIR=$(pwd)
+BS_IP="128.224.162.165"
+BS_NAME="starlingx-builder"
 
 # Load tbuilder configuration
 if [[ -r ${WORK_DIR}/buildrc ]]; then
@@ -21,8 +23,8 @@ fi
 
 CMD=$1
 
-TC_CONTAINER_NAME=${MYUNAME}-debian-bullseye1
-TC_CONTAINER_TAG=local/${MYUNAME}-stx-bullseye:10.7
+TC_CONTAINER_NAME=${MYUNAME}-bullseye-1
+TC_CONTAINER_TAG=local/${MYUNAME}-stxdebian:10.7
 TC_DOCKERFILE=Dockerfile
 
 function create_container {
@@ -47,14 +49,13 @@ function exec_container {
     echo "docker cp ${WORK_DIR}/buildrc ${TC_CONTAINER_NAME}:/home/${MYUNAME}"
     sudo docker cp ${WORK_DIR}/buildrc ${TC_CONTAINER_NAME}:/home/${MYUNAME}
     sudo docker cp ${WORK_DIR}/localrc ${TC_CONTAINER_NAME}:/home/${MYUNAME}
+    sudo docker cp ${WORK_DIR}/mybashrc ${TC_CONTAINER_NAME}:/home/${MYUNAME}/.bashrc
     sudo docker exec -it --user=${MYUNAME} -e MYUNAME=${MYUNAME} ${TC_CONTAINER_NAME} script -q -c "/bin/bash" /dev/null
 }
 
 function run_container {
     # create localdisk
-    mkdir -p ${LOCALDISK}/designer/${MYUNAME}/${PROJECT}
-    #create centOS mirror
-    mkdir -p ${HOST_MIRROR_DIR}/CentOS
+    mkdir -p ${LOCALDISK}/designer/${MYUNAME}/${PROJECT}/cgcs-root
 
     sudo docker run -it --rm \
         --name ${TC_CONTAINER_NAME} \
@@ -70,6 +71,7 @@ function run_container {
         -e MYUNAME=${MYUNAME} \
         --privileged=true \
         --security-opt seccomp=unconfined \
+        --add-host ${BS_NAME}:${BS_IP} \
         ${TC_CONTAINER_TAG}
 }
 

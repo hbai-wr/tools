@@ -1,34 +1,26 @@
 #!/bin/bash
 
-# Load tbuilder configuration
-if [[ -r ${HOME}/buildrc ]]; then
-    source ${HOME}/buildrc
-fi
-
-# make the place we will clone into
-. /etc/profile.d/stx-builder-conf.sh
-echo "MY_REPO=$MY_REPO"
-mkdir -p $MY_REPO
-mkdir -p $MY_WORKSPACE
+sed -i "s/user=username/user=${OBSUSER}/g" ${HOME}/.config/osc/oscrc
+sed -i "s/pass=password/pass=${OBSPASS}/g" ${HOME}/.config/osc/oscrc
 
 cat <<EOF
-Using ${SOURCE_REMOTE_URI} for build
-
 To ease checkout do:
     eval \$(ssh-agent)
     ssh-add
 To start a fresh source tree:
     cd \$MY_REPO_ROOT_DIR
     repo init -u https://opendev.org/starlingx/manifest.git -m default.xml
+To setup local builder:
+    cd \$MY_PKG_BUILD_DIR
+    setup_local_builder
 To build all packages:
-    cd \$MY_REPO
+    cd \$MY_BUILD_DIR
     build-pkgs or build-pkgs <pkglist>
 To make an iso:
     build-iso
 EOF
 
-# pbuilder setup
-#source ${HOME}/pbuilder/pbuilder_setup.sh
-
-# live-build setup
-#. ${HOME}/live-build/live-build_setup.sh
+[ -d ${MY_WORKSPACE} ] && {
+    mkdir -p ${MY_WORKSPACE}
+}
+cd ${MY_WORKSPACE}

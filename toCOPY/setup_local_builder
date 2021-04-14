@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ ! -f "/etc/init.d/apt-cacher-ng" ]; then
+    sudo apt-get install -y sbuild-debian-developer-setup
+    sleep 1
+fi
+
+[ $? -eq 0 ] && sudo /etc/init.d/apt-cacher-ng start > /dev/null 2>&1
+sleep 1
+sudo sbuild-debian-developer-setup --suite=bullseye

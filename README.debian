@@ -1,7 +1,18 @@
-1. Create 'localrc' in this folder and set these Variables
+1. Create 'localrc' in this folder and set below Variables:
+MYUNAME=
+PROJECT=
+HOST_PREFIX=
+OBSNAME=
+OBSPASSWORD=
+
 2. bash tb.sh create; bash tb.sh run; bash tb.sh exec
-3. In the container:
-   #source ~/.bashrc
+
+3. Setup the local builder:
+   setup_local_builder
+
 4. #cd $MY_REPO_ROOT_DIR
    #/usr/local/bin/repo init -u https://opendev.org/starlingx/manifest -m default.xml
    #/usr/local/bin/repo sync -j`nproc`
+
+5. #cd $MY_BUILD_PKG_DIR
+   #build-pkgs <pacakges>
