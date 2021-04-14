@@ -56,6 +56,7 @@ function exec_container {
 function run_container {
     # create localdisk
     mkdir -p ${LOCALDISK}/designer/${MYUNAME}/${PROJECT}/cgcs-root
+    mkdir -p ${LOCALDISK}/loadbuild/${MYUNAME}/${PROJECT}
 
     sudo docker run -it --rm \
         --name ${TC_CONTAINER_NAME} \
