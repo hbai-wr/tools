@@ -3,7 +3,10 @@ MYUNAME=
 PROJECT=
 HOST_PREFIX=
 OBSNAME=
-OBSPASSWORD=
+OBSPASS=
+
+for OBSNAME and OBSPASS, you should sign up on:
+https://128.224.162.165
 
 2. bash tb.sh create; bash tb.sh run; bash tb.sh exec
 
