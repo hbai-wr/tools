@@ -9,7 +9,8 @@ To ease checkout do:
     ssh-add
 To start a fresh source tree:
     cd \$MY_REPO_ROOT_DIR
-    repo init -u https://opendev.org/starlingx/manifest.git -m default.xml
+    repo init -u https://github.com/hbai-wr/starlingx-manifest.git -b f/debian11 -m deb_default.xml
+    repo sync
 To setup local builder:
     cd \$MY_PKG_BUILD_DIR
     setup_local_builder
