@@ -64,7 +64,8 @@ RUN groupadd -g 751 cgts && \
         sbuild \
         emacs \
         httpie \
-	osc
+        po4a \
+        osc
 
 RUN useradd -r -u $MYUID -g cgts -m $MYUNAME && \
     ln -s /home/$MYUNAME/.ssh /mySSH
