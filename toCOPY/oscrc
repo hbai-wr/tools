@@ -1,7 +1,7 @@
 [general]
 # URL to access API server, e.g. https://api.opensuse.org
 # you also need a section [https://api.opensuse.org] with the credentials
-apiurl = https://starlingx-builder
+apiurl = https://pek-starlingx-d1
 # Downloaded packages are cached here. Must be writable by you.
 packagecachedir = /var/tmp/osbuild-packagecache
 # Wrapper to call build as root (sudo, su -, ...)
@@ -109,7 +109,7 @@ checkout_no_colon = 0
 # was specified the review will be accepted for this group (default: off)
 #review_inherit_group = 1
 
-[https://starlingx-builder]
+[https://pek-starlingx-d1]
 user=username
 pass=password
 credentials_mgr_class=osc.credentials.PlaintextConfigFileCredentialsManager

@@ -13,8 +13,6 @@
 
 SCRIPT_DIR=$(cd $(dirname "$0") && pwd)
 WORK_DIR=$(pwd)
-BS_IP="128.224.162.165"
-BS_NAME="starlingx-builder"
 
 # Load tbuilder configuration
 if [[ -r ${WORK_DIR}/buildrc ]]; then
@@ -72,7 +70,6 @@ function run_container {
         -e MYUNAME=${MYUNAME} \
         --privileged=true \
         --security-opt seccomp=unconfined \
-        --add-host ${BS_NAME}:${BS_IP} \
         ${TC_CONTAINER_TAG}
 }
 
